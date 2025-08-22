@@ -27,7 +27,7 @@ type Transition struct {
 
 type Reapproval struct {
 	After   string `json:"after"`
-	ToState string `json:"to_state"`
+	ToState string `json:"toState"`
 }
 
 type WorkflowDefinition struct {
@@ -37,16 +37,16 @@ type WorkflowDefinition struct {
 	Transitions []Transition      `json:"transitions"`
 	SLA         map[string]string `json:"sla,omitempty"`
 	Reapproval  *Reapproval       `json:"reapproval,omitempty"`
-	CreatedAt   time.Time         `json:"createt_ate,omitempty"`
+	CreatedAt   time.Time         `json:"createdAt,omitempty"`
 }
 
 type Document struct {
-	ID         string
-	WorkflowID string
-	Current    string
-	Data       map[string]any
-	CreatedAt  time.Time
-	UpdaterAt  time.Time
-	DuaAt      *time.Time
-	NextReapp  *time.Time
+	ID         string         `json:"id"`
+	WorkflowID string         `json:"workflowId"`
+	Current    string         `json:"current"`
+	Data       map[string]any `json:"data,omitempty"`
+	CreatedAt  time.Time      `json:"createdAt"`
+	UpdaterAt  time.Time      `json:"updatedAt"`
+	DueAt      *time.Time     `json:"dueAt,omitempty"`
+	NextReapp  *time.Time     `json:"nextReapproval,omitempty"`
 }

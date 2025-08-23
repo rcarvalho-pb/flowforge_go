@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Workflow Approvals (HTMX)</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        body {
+            font-family: ui-sans-serif, system-ui;
+            margin: 2rem;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px
+        }
+
+        section {
+            margin-bottom: 2rem;
+        }
+
+        code {
+            background: #f5f5f5;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px
+        }
+    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+    <h1>Workflow Approvals</h1>
+    <section>
+        <h2>1) Criar Workflow</h2>
+        <form hx-post="/api/workflows" hx-target="#wf-result" hx-swap="innerHTML">
+            <textarea name="" id="wf-json">{
+                "name": "PurchaseOrderApproval",
+                "states": [
+                { "name": "Draft", "initial": true },
+                { "name": "ManagerApproval" },
+                { "name": "FinanceApproval" },
+                { "name": "Approved", "terminal": true },
+                { "name": "Rejected", "terminal": true }
+                ],
+                "transitions": [
+                { "from": "Draft", "to": "ManagerApproval", "event": "submit", "roles": ["author"] },
+                { "from": "ManagerApproval", "to": "FinanceApproval", "event": "approve", "roles": ["manager"] },
+                { "from": "ManagerApproval", "to": "Rejected", "event": "reject", "roles": ["manager"] },
+                { "from": "FinanceApproval", "to": "Approved", "event": "approve", "roles": ["finance"] },
+                { "from": "FinanceApproval", "to": "Rejected", "event": "reject", "roles": ["finance"] }
+                ],
+                "sla": { "FinanceApproval": "72h" },
+                "reapproval": { "after": "180d", "toState": "ManagerApproval" }
+                }</textarea>
+            <button type="submit" hx-headers='{"Content-Type": "application/json"}' hx-vals='{"body": "#wf-json"}'
+                hx-include="#wf-json" onclick="this.form.requestSubmit(); return false;">Salvar Workflow</button>
+        </form>
+        <div id="wf-result"></div>
+    </section>
+    <section>
+        <h2>2) Criar Documento</h2>
+        <form hx-post="/api/documents" hx-target="#doc-result" hx-swap="innerHTML">
+            <label>Workflow ID: <input name="workflowId" placeholder="wf_1" /></label>
+            <button type="submit" hx-headers='{"Content-Type": "application/json"}'
+                hx-vals='{"data": {"amount": 123}}'>Criar</button>
+        </form>
+        <div id="doc-result"></div>
+    </section>
+
+    <section>
+        <h2>3) Disparar Evento</h2>
+        <form hx-post="/api/documents/REPLACE/events" hx-target="#evt-result" hx-swap="innerHTML"
+            onsubmit="this.action=this.action.replace('REPLACE', document.querySelector('[name=docId]').value)">
+            <label>Doc ID: <input name="docId" placeholder="doc_1" /></label>
+            <label>Evento: <input name="event" value="submit" /></label>
+            <label>Roles (csv): <input name="roles" value="author" /></label>
+            <button type="submit" hx-headers='{"Content-Type": "application/json"}'
+                hx-vals='{"event": document.querySelector(' [name=event]').value, "roles" :
+                document.querySelector('[name=roles]').value.split(',').map(s=>s.trim())}'>Enviar</button>
+        </form>
+        <div id="evt-result"></div>
+    </section>
+
+    <p><small>UI mínima para testes rápidos. Para produção, adicionaremos autenticação, auditoria e designer de
+            fluxos.</small></p>
+</body>
+
+</html>

@@ -3,6 +3,7 @@ package dsl
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/rcarvalho-pb/flowforge-go/internal/domain"
@@ -11,8 +12,10 @@ import (
 func ParseDefinitionJSON(b []byte) (*domain.WorkflowDefinition, error) {
 	var def domain.WorkflowDefinition
 	if err := json.Unmarshal(b, &def); err != nil {
+		log.Println("error unmarshal")
 		return nil, fmt.Errorf("invalid json: %w", err)
 	}
+	log.Println(def)
 	if def.Name == "" || len(def.States) == 0 {
 		return nil, fmt.Errorf("%w: name/states required", domain.ErrWorkflowInvalid)
 	}

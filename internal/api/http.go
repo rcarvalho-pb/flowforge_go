@@ -2,7 +2,7 @@ package api
 
 import (
 	"encoding/json"
-	"io"
+	"log"
 	"net/http"
 	"strings"
 
@@ -25,8 +25,13 @@ func (s *Server) createWorkflow(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	b, _ := io.ReadAll(r.Body)
-	defer r.Body.Close()
+	// b, _ := io.ReadAll(r.Body)
+	// defer r.Body.Close()
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	b := []byte(r.FormValue("workflow"))
 	def, err := dsl.ParseDefinitionJSON(b)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -45,15 +50,20 @@ func (s *Server) createDocument(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	var req struct {
-		WorkflowID string         `json:"workflowId"`
-		Data       map[string]any `json:"data"`
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	workflowId := r.FormValue("workflowId")
+	rawData := r.FormValue("data")
+	log.Println(workflowId)
+	log.Println(rawData)
+	var data map[string]any
+	if err := json.Unmarshal([]byte(rawData), &data); err != nil {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
-	doc, err := s.Eng.CreateDocument(req.WorkflowID, req.Data)
+	doc, err := s.Eng.CreateDocument(workflowId, data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -68,7 +78,7 @@ func (s *Server) documentActions(w http.ResponseWriter, r *http.Request) {
 		doc, err := s.Eng.ApplyEvent(id, "", nil)
 		_ = doc
 		_ = err
-		http.Error(w, "not implemented", 501)
+		http.Error(w, "not implemented", http.StatusNotImplemented)
 		return
 	}
 

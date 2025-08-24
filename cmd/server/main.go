@@ -15,9 +15,9 @@ func main() {
 	e := engine.New(r, jobs.NoopScheduler{})
 	s := &api.Server{Eng: e}
 	mux := http.NewServeMux()
-	s.Routes(mux)
-	fs := http.FileServer(http.Dir("./web"))
-	mux.Handle("/static/", http.StripPrefix("/static/", fs))
+	mux.Handle("/api/", http.StripPrefix("/api", s.Router()))
+	// fs := http.FileServer(http.Dir("./web"))
+	// mux.Handle("/static/", http.StripPrefix("/static/", fs))
 	log.Println("listening on port :8080")
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }

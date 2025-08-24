@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -14,10 +15,14 @@ type Server struct {
 	Eng *engine.Engine
 }
 
-func (s *Server) Routes(mux *http.ServeMux) {
-	mux.HandleFunc("/api/workflows", s.createWorkflow)
-	mux.HandleFunc("/api/documents", s.createDocument)
-	mux.HandleFunc("/api/documents/", s.documentActions)
+func (s *Server) Router() http.Handler {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/workflows", s.createWorkflow)
+	mux.HandleFunc("/documents", s.createDocument)
+	mux.HandleFunc("/documents/{id}/events", s.documentActions)
+
+	return mux
 }
 
 func (s *Server) createWorkflow(w http.ResponseWriter, r *http.Request) {
@@ -25,13 +30,8 @@ func (s *Server) createWorkflow(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	// b, _ := io.ReadAll(r.Body)
-	// defer r.Body.Close()
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	b := []byte(r.FormValue("workflow"))
+	b, _ := io.ReadAll(r.Body)
+	defer r.Body.Close()
 	def, err := dsl.ParseDefinitionJSON(b)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -50,20 +50,15 @@ func (s *Server) createDocument(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+	var req struct {
+		WorkflowID string         `json:"workflowId"`
+		Data       map[string]any `json:"data"`
 	}
-	workflowId := r.FormValue("workflowId")
-	rawData := r.FormValue("data")
-	log.Println(workflowId)
-	log.Println(rawData)
-	var data map[string]any
-	if err := json.Unmarshal([]byte(rawData), &data); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
-	doc, err := s.Eng.CreateDocument(workflowId, data)
+	doc, err := s.Eng.CreateDocument(req.WorkflowID, req.Data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -72,7 +67,9 @@ func (s *Server) createDocument(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) documentActions(w http.ResponseWriter, r *http.Request) {
-	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/api/documents/"), "/")
+	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/documents/"), "/")
+	log.Println(r.URL.Path)
+	log.Println(parts)
 	if len(parts) == 1 && r.Method == http.MethodGet {
 		id := parts[0]
 		doc, err := s.Eng.ApplyEvent(id, "", nil)
@@ -83,6 +80,7 @@ func (s *Server) documentActions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(parts) == 2 && parts[1] == "events" && r.Method == http.MethodPost {
+		log.Println("here")
 		id := parts[0]
 		var req struct {
 			Event string   `json:"event"`

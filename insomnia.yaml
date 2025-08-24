@@ -1,0 +1,168 @@
+type: collection.insomnia.rest/5.0
+name: Scratch Pad
+meta:
+  id: wrk_scratchpad
+  created: 1751738268132
+  modified: 1751738268132
+  description: ""
+collection:
+  - name: Flowforge
+    meta:
+      id: fld_ca2c2562bafd401d9e23ae8c0d13c97a
+      created: 1756043603459
+      modified: 1756043603459
+      sortKey: -1756043603459
+      description: ""
+    children:
+      - name: API
+        meta:
+          id: fld_78acc8b1b0d5454fbfd3f9362cb5d0ba
+          created: 1756043880610
+          modified: 1756043880610
+          sortKey: -1756043880610
+          description: ""
+        children:
+          - url: "{{ _.BASE_URL }}/{{ _.API }}/{{ _.WORKFLOWS_RESOURCE }}"
+            name: Create Workflow
+            meta:
+              id: req_11342498567f4c4ab44b25625ce3a275
+              created: 1756043637149
+              modified: 1756044855982
+              isPrivate: false
+              description: ""
+              sortKey: -1756043884765
+            method: POST
+            body:
+              mimeType: application/json
+              text: >-
+                {
+                    "name": "PurchaseOrderApproval",
+                        "states": [
+                        { "name": "Draft", "initial": true },
+                        { "name": "ManagerApproval" },
+                        { "name": "FinanceApproval" },
+                        { "name": "Approved", "terminal": true },
+                        { "name": "Rejected", "terminal": true }
+                    ],
+                    "transitions": [
+                        { "from": "Draft", "to": "ManagerApproval", "event": "submit", "roles": ["author"] },
+                        { "from": "ManagerApproval", "to": "FinanceApproval", "event": "approve", "roles": ["manager"] },
+                        { "from": "ManagerApproval", "to": "Rejected", "event": "reject", "roles": ["manager"] },
+                        { "from": "FinanceApproval", "to": "Approved", "event": "approve", "roles": ["finance"] },
+                        { "from": "FinanceApproval", "to": "Rejected", "event": "reject", "roles": ["finance"] }
+                    ],
+                    "sla": { "FinanceApproval": "72h" },
+                    "reapproval": { "after": "500h", "toState": "ManagerApproval" }
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+              - name: User-Agent
+                value: insomnia/11.4.0
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{ _.BASE_URL }}/{{ _.API }}/{{ _.DOCUMENTS_RESOURCE }}"
+            name: Create Document
+            meta:
+              id: req_c8fb8e0eb9a747d59f6b66a51651d75c
+              created: 1756043853587
+              modified: 1756045418895
+              isPrivate: false
+              description: ""
+              sortKey: -1756043884665
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                	"workflowId": "{{ _.WORKFLOW_ID }}",
+                	"data": {
+                		"amount": 123
+                	}
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+              - name: User-Agent
+                value: insomnia/11.4.0
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{ _.BASE_URL }}/{{ _.API }}/{{ _.DOCUMENTS_RESOURCE }}/{{ _.DOCUMENT_ID
+              }}/events"
+            name: Document Event
+            meta:
+              id: req_41722e7957bf4b7481dd28085c8bdce4
+              created: 1756044680957
+              modified: 1756046594622
+              isPrivate: false
+              description: ""
+              sortKey: -1756043884565
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                	"event": "submit",
+                	"roles": [
+                		"author"
+                	]
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+              - name: User-Agent
+                value: insomnia/11.4.0
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_99d30891da4bdcebc63947a8fc17f076de878684
+    created: 1751738280095
+    modified: 1751738280095
+environments:
+  name: Base Environment
+  meta:
+    id: env_99d30891da4bdcebc63947a8fc17f076de878684
+    created: 1751738280021
+    modified: 1751738334521
+    isPrivate: false
+  data:
+    "":
+      BASE_URL: localhost:8080
+  subEnvironments:
+    - name: Flowforge-go
+      meta:
+        id: env_af1b0e0742b74495bdd9963d702c91fe
+        created: 1756043695659
+        modified: 1756045345151
+        isPrivate: true
+        sortKey: 1756043695659
+      data:
+        BASE_URL: localhost:8080
+        API: api
+        WEB: web
+        WORKFLOW_ID: "{% response 'body', 'req_11342498567f4c4ab44b25625ce3a275',
+          'b64::JC5pZA==::46b', 'never', 60 %}"
+        DOCUMENT_ID: "{% response 'body', 'req_c8fb8e0eb9a747d59f6b66a51651d75c',
+          'b64::JC5pZA==::46b', 'never', 60 %}"
+        WORKFLOWS_RESOURCE: workflows
+        DOCUMENTS_RESOURCE: documents

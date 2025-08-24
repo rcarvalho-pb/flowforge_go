@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 
@@ -68,8 +67,6 @@ func (s *Server) createDocument(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) documentActions(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/documents/"), "/")
-	log.Println(r.URL.Path)
-	log.Println(parts)
 	if len(parts) == 1 && r.Method == http.MethodGet {
 		id := parts[0]
 		doc, err := s.Eng.ApplyEvent(id, "", nil)
@@ -80,7 +77,6 @@ func (s *Server) documentActions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(parts) == 2 && parts[1] == "events" && r.Method == http.MethodPost {
-		log.Println("here")
 		id := parts[0]
 		var req struct {
 			Event string   `json:"event"`
